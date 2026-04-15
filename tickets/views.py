@@ -5,7 +5,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView  # ← This was missing!
 
-from .models import Ticket, TicketComment
+from .models import Ticket, TicketAttachment, TicketComment
 from .serializers import (
     TicketAttachmentSerializer,
     TicketCommentSerializer,
@@ -111,12 +111,23 @@ class TicketViewSet(viewsets.ModelViewSet):
             if ticket.status == "open":
                 ticket.status = "assigned"
             ticket.save()
+            from .tasks import send_ticket_notification
+
+            send_ticket_notification.delay(ticket.id, "Assigned")
             return Response(TicketSerializer(ticket).data)
 
         return Response(
             {"detail": "assigned_to field is required"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    # ===================== VIDEO CALL =====================
+    @action(detail=True, methods=["get"])
+    def video_call(self, request, pk=None):
+        """Returns Jitsi Meet URL for this ticket"""
+        ticket = self.get_object()
+        url = ticket.get_jitsi_url()
+        return Response({"video_url": url, "room_name": ticket.jitsi_room})
 
 
 class CurrentUserView(APIView):
@@ -127,11 +138,3 @@ class CurrentUserView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-
-    # ===================== VIDEO CALL =====================
-    @action(detail=True, methods=["get"])
-    def video_call(self, request, pk=None):
-        """Returns Jitsi Meet URL for this ticket"""
-        ticket = self.get_object()
-        url = ticket.get_jitsi_url()
-        return Response({"video_url": url, "room_name": ticket.jitsi_room})

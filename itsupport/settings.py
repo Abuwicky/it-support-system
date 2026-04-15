@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "rest_framework",  # Django REST Framework (for APIs)
     "channels",  # Real-time features (WebSockets)
     "rest_framework_simplejwt",  # JWT Authentication for Next.js frontend
+    "corsheaders",  # CORS headers for Next.js frontend
     # Our app
     "tickets",  # Our IT Support app
 ]
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
 # ==================== MIDDLEWARE ====================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # Must be before CommonMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -117,3 +119,11 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # For development only
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# ==================== CORS (Cross-Origin Resource Sharing) ====================
+# Allow the Next.js dev server and production frontend to call the API
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
